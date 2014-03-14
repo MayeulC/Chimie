@@ -14,6 +14,19 @@ The name will probably change in the future, it is mostly a placeholder for now.
 If you would like any change to the program, just let me know (you can open an 
 issue on github).
 
+Instructions
+======
+
+qmake
+make
+
+should be sufficent. Make sure you have the correct packets installed
+
+Requires
+======
+
+SDL 1.2 (Hopefully not for long)
+Qt 4.7
 
 License
 ======
