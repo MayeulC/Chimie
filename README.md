@@ -17,8 +17,8 @@ issue on github).
 Instructions
 ======
 
-qmake
-make
+	qmake
+	make
 
 should be sufficent. Make sure you have the correct packets installed
 
