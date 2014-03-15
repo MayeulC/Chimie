@@ -8,21 +8,33 @@ DEPENDPATH += . release
 INCLUDEPATH += .
 
 # Input
-HEADERS += classes.h fenapropos.h mainwindow.h reglagescourbes.h tools.h vue.h
-FORMS += fenapropos.ui mainwindow.ui reglagescourbes.ui
-SOURCES += classes.cpp \
-           fenapropos.cpp \
-           main.cpp \
-           mainwindow.cpp \
-           reglagescourbes.cpp \
-           tools.cpp \
-           vue.cpp
+HEADERS +=  classes.h \
+            mainwindow.h \
+            tools.h \
+            graphsettings.h \
+    view.h \
+    aboutwindow.h
+
+FORMS +=    \
+            mainwindow.ui \
+            graphsettings.ui \
+    aboutwindow.ui
+
+SOURCES +=  classes.cpp \
+            main.cpp \
+            mainwindow.cpp \
+            tools.cpp \
+            graphsettings.cpp \
+    view.cpp \
+    aboutwindow.cpp
+
 RESOURCES += ressources.qrc
 
 RC_FILE = ressources.rc
 
+#If on windows, uncomment the following [replace "E:\\Qt\\SDL-1.2.15\\lib" with your own path]
 #LIBS += -LE:\\Qt\\SDL-1.2.15\\lib -lSDL.dll
 
+#To build with Qt and mingw statically linked, uncomment the following
 #win32:LIBS += -Wl,-Bstatic -LE:/Qt/SDL-1.2.15/lib  -lmingw32 -lSDLmain -lSDL.dll  -mwindows  -lm -luser32 -lgdi32 -lwinmm -ldxguid  -Wl,-Bdynamic
 LIBS += -lSDL
-

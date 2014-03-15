@@ -1,60 +1,57 @@
-/* Classes.cpp : contient les méthodes des classes du projet de fin d'année
-*/
-
 #include "classes.h"
 
-//Méthodes pour T_Simulation
+//T_Simulation Methodes
 
 T_Simulation::T_Simulation()
 {
-    nombreElements = 3; //par défaut, sera changé au besoin par le signal.
-    RAB.initialiser(&element[0], &element[1]); //associe la réaction à l'élément
-    RBC.initialiser(&element[1], &element[2]);
-    Xmax=0; //Vérifier que cela ne cause pas de bug
+    elementsNumber = 3; //default, is changed at will by the signal
+    RAB.initialize(&element[0], &element[1]); //associate reaction and element
+    RBC.initialize(&element[1], &element[2]);
+    Xmax=0;
     Ymax=0;
     debugCalcul=false;
 }
-void T_Simulation::creerMessageErreur(QWidget *parent)
+void T_Simulation::createErrorMessage(QWidget *parent)
 {
-    m_parent=parent; //sert pour le message d'erreur en cas de dépassement mémoire.
-    MessageErreur=new QErrorMessage(parent);
+    m_parent=parent; //useful for the out of mem error message
+    m_errorMessage=new QErrorMessage(parent);
 }
 void T_Simulation::go()
 {
-    //vérifier les conditions, si une est fausse, afficher une boite de dialogue
-    // (tester k!=0; T !=0; Dt != 0 )
+    //check prerequesites, and display an error message if needed
+    // (test k!=0; t !=0; dt != 0 )
     std::string ErrorMessage;
 
-    if ((element[0].verifier()||element[1].verifier()||element[2].verifier()||((nombreElements-3)&&element[3].verifier())))
+    if ((element[0].check()||element[1].check()||element[2].check()||((elementsNumber-3)&&element[3].check())))
     {
-        ErrorMessage+="<br> - Les éléments de la réaction";
+        ErrorMessage+="<br> - Les Ã©lÃ©ments de la rÃ©action";
     }
 
-    if(RAB.verifier()||RBC.verifier()||((nombreElements-3)&&RCD.verifier()))
+    if(RAB.check()||RBC.check()||((elementsNumber-3)&&RCD.check()))
     {
-        ErrorMessage+="<br> - Les paramètres de réaction";
+        ErrorMessage+="<br> - Les paramÃ¨tres de raction";
     }
 
-    if(Temps->verifier())
+    if(m_Time->check())
     {
-        ErrorMessage+="<br> - Les paramètres temporels";
+        ErrorMessage+="<br> - Les paramÃ¨tres temporels";
     }
     if(ErrorMessage.size()!=0)
     {
-        emit MessageStatut("Une erreur est survenue! Vérifiez les paramètres.");
-        ErrorMessage="Veuillez vérifier : " + ErrorMessage;
-        MessageErreur->showMessage(ErrorMessage.c_str());
+        emit MessageStatus("Une erreur est survenue! VÃ©rifiez les paramÃ¨tres.");
+        ErrorMessage="Veuillez vÃ©rifier : " + ErrorMessage;
+        m_errorMessage->showMessage(ErrorMessage.c_str());
         return;
     }
-    element[0].preparer();
-    element[1].preparer();
-    element[2].preparer();
-    element[3].preparer();//permet d'effacer la courbe si l'élément a été désactivé
+    element[0].prepare();
+    element[1].prepare();
+    element[2].prepare();
+    element[3].prepare(); //allows to display a curve if element is disabled
 
-    Temps->initialiser();
+    m_Time->initialize();
 
-    emit ProgressionCalcul(0);
-    emit MessageStatut("Calcul en cours...");
+    emit CalculationProgress(0);
+    emit MessageStatus("Calcul en cours...");
 
     Ymax=0;
     /**/
@@ -62,39 +59,39 @@ void T_Simulation::go()
     {
         qDebug()<< "**********Valeurs initiales************\n";
         qDebug()<< element[0].returnCt(0)<<" \t"<<element[1].returnCt(0)<<"\t"<<element[2].returnCt(0);
-        qDebug()<< "\n/***********************************\\\n|Début de l'arrivée des résultats : |\n\\***********************************/\n";
-        qDebug()<< "Durée : "<<Temps->dureesec()<< " delta : "<<Temps->deltaTsec()<<" courant : "<<Temps->courantsec()<<"\n";
+        qDebug()<< "\n/***********************************\\\n|DÃ©but de l'arrive des rÃ©sultats : |\n\\***********************************/\n";
+        qDebug()<< "DurÃ©e : "<<m_Time->dureesec()<< " delta : "<<m_Time->deltaTsec()<<" courant : "<<m_Time->actualsec()<<"\n";
     }
     /**/
 
     try
     {
-        while (Temps->checkLoop()) //condition de calcul des concentrations exclusivement temporelle
+        while (m_Time->checkLoop()) //temporal check
         {
             Ymax=qMax(Ymax,qMax(qMax(element[0].returnCt(),element[1].returnCt()),qMax(element[2].returnCt(),element[3].returnCt())));
             /**/
             if(debugCalcul)
-                qDebug() <<Temps->courantsec()<< " |\t"<< element[0].returnCt() << '\t' << element[1].returnCt() << '\t' << element[2].returnCt() << '\n';
+                qDebug() <<m_Time->actualsec()<< " |\t"<< element[0].returnCt() << '\t' << element[1].returnCt() << '\t' << element[2].returnCt() << '\n';
             /**/
-            element[0].avancer(Temps, int(Temps->courantsec()/Temps->deltaTsec())); //variation de concentration de A
-            element[1].avancer(Temps, int(Temps->courantsec()/Temps->deltaTsec())); //variation de concentration de B
-            element[2].avancer(Temps, int(Temps->courantsec()/Temps->deltaTsec())); //variation de concentration de C
-            if (nombreElements == 4)
-                element[3].avancer(Temps, int(Temps->courantsec()/Temps->deltaTsec())); //éventuelle variation de concentration de D
+            element[0].step(m_Time, int(m_Time->actualsec()/m_Time->deltaTsec())); //concentration variation of A
+            element[1].step(m_Time, int(m_Time->actualsec()/m_Time->deltaTsec())); //concentration variation of B
+            element[2].step(m_Time, int(m_Time->actualsec()/m_Time->deltaTsec())); //concentration variation of C
+            if (elementsNumber == 4)
+                element[3].step(m_Time, int(m_Time->actualsec()/m_Time->deltaTsec())); //concentration variation of D (if needed)
 
 
-            Temps->avancement(); //avancement de l'instant Courant représentant l'avancement de la réaction
-            emit ProgressionCalcul(int(100*(Temps->courantsec()/Temps->dureesec())));
+            m_Time->step(); //one step forward time-wise
+            emit CalculationProgress(int(100*(m_Time->actualsec()/m_Time->dureesec())));
         }
 
         Ymax=qMax(Ymax,qMax(qMax(element[0].returnCt(),element[1].returnCt()),qMax(element[2].returnCt(),element[3].returnCt())));
         /**/
         if(debugCalcul)
-            qDebug() <<Temps->courantsec()<< " |\t"<< element[0].returnCt() << '\t' << element[1].returnCt() << '\t' << element[2].returnCt() << '\n';
+            qDebug() <<m_Time->actualsec()<< " |\t"<< element[0].returnCt() << '\t' << element[1].returnCt() << '\t' << element[2].returnCt() << '\n';
         /**/
-        emit MessageStatut("Calcul terminé");
-        emit ProgressionCalcul(100);
-        Xmax=Temps->courantsec()-Temps->deltaTsec(); //car on a fait un deltaT de plus pour sortir de la boucle
+        emit MessageStatus(tr("Calcul terminÃ©"));
+        emit CalculationProgress(100);
+        Xmax=m_Time->actualsec()-m_Time->deltaTsec(); //we did one more delta(t) to get out of the loop
 
     }
     catch(std::exception e)
@@ -104,87 +101,85 @@ void T_Simulation::go()
 
 
 }
-void T_Simulation::amnesie(){
-    element[0].preparer();
-    element[1].preparer();
-    element[2].preparer();
-    element[3].preparer();
+void T_Simulation::amnesia(){
+    element[0].prepare();
+    element[1].prepare();
+    element[2].prepare();
+    element[3].prepare();
     Xmax=0;
     Ymax=0;
 }
 void T_Simulation::checkboxTriggered(int arg1){
-    nombreElements=3+!!arg1; // l'argument renvoie 0 ou 2, donc prendre !! permet d'avoir 0 ou 1
+    elementsNumber=3+!!arg1; // arg is either 0 or 2, so !! is 0 or 1
 
-    if(nombreElements==4)
-        RCD.initialiser(&element[2],&element[3]);  //associe C et D dans RCD
-    if(nombreElements==3)
-        RCD.dissocier(&element[2],&element[3]);//supprime la mention de D dans les différents pointeurs.
+    if(elementsNumber==4)
+        RCD.initialize(&element[2],&element[3]);  //associate C and D in RCD
+    if(elementsNumber==3)
+        RCD.dissociate(&element[2],&element[3]);//delete D in the different pointers
 
-    testPourSliders();//au cas où cela permettrait l'activation/la désactivation d'un slider
+    testForSliders(); //checks if it enables or disables a slider
 }
-void T_Simulation::setRapport1(int position)
+void T_Simulation::setRatio1(int position)
 {
     double temp=position;
     temp=temp/300;
-    Rapport1=pow(10,(temp)); //K2/K1
-    double newK1=RBC.returnKab()/Rapport1;
-    RAB.setKab(newK1);
+    Ratio1=pow(10,(temp)); //K2/K1
+    double new_K1=RBC.returnKab()/Ratio1;
+    RAB.setKab(new_K1);
 
-    emit nouveauK1(newK1);
+    emit newK1(new_K1);
 }
-void T_Simulation::setRapport2(int position)
+void T_Simulation::setRatio2(int position)
 {
     double temp=position;
-    temp=temp/300;                     //au lieu de faire un double(position)/double(300)
+    temp=temp/300; //300 here is completely arbitrary
     Rapport2=pow(10,(temp)); //K3/K2
-    double newK3=RBC.returnKab()*Rapport2;
-    RCD.setKab(newK3);
-    emit nouveauK3(newK3);
+    double new_K3=RBC.returnKab()*Rapport2;
+    RCD.setKab(new_K3);
+    emit newK3(new_K3);
 }
-void T_Simulation::CalculRapport1()
+void T_Simulation::CalculateRatio1()
 {
-    if(RAB.returnKab()!=0)//K2/K1 soit RBC/RAB
+    if(RAB.returnKab()!=0)//K2/K1 <=> RBC/RAB
     {
-        Rapport1=RBC.returnKab()/RAB.returnKab();
-        emit nouveauRapport1(log(Rapport1)*300);
+        Ratio1=RBC.returnKab()/RAB.returnKab();
+        emit newRatio1(log(Ratio1)*300);
     }
     if(RBC.returnKab()==0&&RAB.returnKab()==0)
     {
-        emit nouveauRapport1(0);
+        emit newRatio1(0);
     }
     else
     {
         if(RBC.returnKab()==0)
-            emit nouveauRapport1(-1000);
+            emit newRatio1(-1000);
         if(RAB.returnKab()==0)
-            emit nouveauRapport1(1000);
+            emit newRatio1(1000);
     }
 }
-void T_Simulation::CalculRapport2()
+void T_Simulation::CalculateRatio2()
 {
-    //if(nombreElements==4) //en fait c'est plus joli de voir le slider bouger m^eme quand E4 est désactivé
-    //{
-        if(RBC.returnKab()!=0) //K3/K2 soit RCD/RBC
+        if(RBC.returnKab()!=0) //K3/K2 <=> RCD/RBC
         {
-            Rapport1=RCD.returnKab()/RBC.returnKab();
-            emit nouveauRapport2(log(Rapport1)*300);
+            Ratio1=RCD.returnKab()/RBC.returnKab();
+            emit newRatio2(log(Ratio1)*300);
         }
         if(RBC.returnKab()==0&&RCD.returnKab()==0)
         {
-            emit nouveauRapport2(0);
+            emit newRatio2(0);
         }
         else
         {
             if(RBC.returnKab()==0)
-                emit nouveauRapport2(1000);
+                emit newRatio2(1000);
             if(RCD.returnKab()==0)
-                emit nouveauRapport2(-1000);
+                emit newRatio2(-1000);
         }
     //}
 }
-void T_Simulation::testPourSliders() //vérifie quels sliders peuvent être activés et les (dés)active
+void T_Simulation::testForSliders() //tests which slider(s) can be enabled/disabled
 {
-    if(RBC.returnKab()!=0) //si [s]k1 et k2[/s] K2 suffit car on modifie K1 en fonction de K2 avec le slider.
+    if(RBC.returnKab()!=0)
     {
         emit DisableSlider1(false);
     }
@@ -192,8 +187,8 @@ void T_Simulation::testPourSliders() //vérifie quels sliders peuvent être activé
     {
         emit DisableSlider1(true);
     }
-    //et rebelote pour le deuxième slider
-    if(RBC.returnKab()!=0&&nombreElements==4) //si k2 est valide et qu'il y a 4 éléments en jeu
+    //the same for the second slider :
+    if(RBC.returnKab()!=0&&elementsNumber==4) //if k2 is valid and there's 4 elements
     {
         emit DisableSlider2(false);
     }
@@ -204,13 +199,12 @@ void T_Simulation::testPourSliders() //vérifie quels sliders peuvent être activé
 }
 void T_Simulation::outOfMemHandler()
 {
-    element[0].preparer();
-    element[1].preparer();
-    element[2].preparer();
-    element[3].preparer();
-    emit MessageStatut("Erreur critique : Mémoire insuffisante!");
-    QMessageBox::warning(m_parent,"Erreur","Mémoire vive insuffisante pour continuer.\nVérifiez les paramètres temporels.");
-    //MessageErreur->showMessage("Mémoire vive insuffisante pour continuer.\nVérifiez les paramètres temporels.","mem");
+    element[0].prepare();
+    element[1].prepare();
+    element[2].prepare();
+    element[3].prepare();
+    emit MessageStatus(tr("Erreur critique : Mmoire insuffisante!"));
+    QMessageBox::warning(m_parent,tr("Erreur"),tr("MÃ©moire vive insuffisante pour continuer.\nVÃ©rifiez les paramÃ¨tres temporels."));
     std::set_new_handler(NULL);
 }
 T_Simulation::~T_Simulation()
@@ -219,9 +213,9 @@ T_Simulation::~T_Simulation()
 }
 
 
-//Méthodes pour T_Element
+//T_Element Methodes
 
-T_Element::T_Element() //constructeur pour T_Element inutilisé (cas d'une réaction à 3 éléments)
+T_Element::T_Element()
 {
     *m_Name = '\0';
      m_C0 = 0;
@@ -233,34 +227,34 @@ T_Element::T_Element() //constructeur pour T_Element inutilisé (cas d'une réacti
      m_TCt.push_back(QPointF(0,m_C0));
      m_sizeTCt = 1;
 }
-void T_Element::associerReaction(T_Reaction *R, int Sens){ //associe une rÃ©action Ã  un Ã©lÃ©ment. Si l'Ã©lÃ©ment est rÃ©actif, la rÃ©action sera ajoutÃ©e en 0. Si l'Ã©lÃ©ment est produit, la rÃ©action sera ajoutÃ©e en 1
+void T_Element::associateReaction(T_Reaction *R, int Direction){ //associate a reaction   un Ã©lÃ©ment. Si l'Ã©lÃ©ment est rÃ©actif, la rÃ©action sera ajoutÃ©e en 0. Si l'Ã©lÃ©ment est produit, la rÃ©action sera ajoutÃ©e en 1
 
-    if (Sens == 1) //l'Ã©lÃ©ment est rÃ©actif, donc la rÃ©action est Ã©crite Ã  sa droite (A = B)
+    if (Direction == 1) //the element is consumed, so the reaction is on the right (A = B)
     {
             m_Reaction[1] = R;
     }
-    if (Sens == -1) //l'Ã©lÃ©ment est produit, donc la rÃ©action est Ã  sa gauche (B = A)
+    if (Direction == -1) //the element is produced, so the reaction is on the left (B = A)
     {
         m_Reaction[0] = R;
     }
-    if ((Sens != 1) && (Sens != -1)) //ERREUR
+    if ((Direction != 1) && (Direction != -1)) //ERROR
     {
-            qDebug()<<"erreur : Vous n'avez pas envoyé un argument 'sens' valide Ã  T_Reaction::associerReaction "<<endl;
+            qDebug()<<"erreur : Vous n'avez pas envoy un argument 'sens' valide   T_Reaction::associerReaction "<<endl;
     }
 }
-void T_Element::dissocierReaction(/*T_Reaction *R,*/ int Sens)//supprime l'élément de la réaction
+void T_Element::dissociateReaction(int Direction)//delete the element from the reaction
 {
-        if (Sens == 1) //l'Élément était un réactif
+        if (Direction == 1) //the element was consumed
     {
             m_Reaction[1] = NULL;
     }
-    if (Sens == -1) //l'Élément était un produit
+    if (Direction == -1) //the element was produced
     {
         m_Reaction[0] = NULL;
     }
-    if ((Sens != 1) && (Sens != -1)) //ERREUR
+    if ((Direction != 1) && (Direction != -1)) //ERROR
     {
-        qDebug()<<"paramètre sens invalide dans la fonction dissocierReaction."<<endl;
+        qDebug()<<"paramtre sens invalide dans la fonction dissocierReaction."<<endl;
     }
 }
 QPointF T_Element::returnCt(int i)
@@ -271,28 +265,27 @@ double T_Element::returnCt()
 {
     return m_Ct;
 }
-int T_Element::tailleHistorique()
+int T_Element::getHistorySize()
 {
     return m_sizeTCt;
 }
-void T_Element::avancer(T_Times* T, int instant)
+void T_Element::step(T_Times* T, int instant)
 {
-//un backup se trouve dans le dossier "avant SDL"... au cas où
     double variation=0;
 
-    if(m_Reaction[1]!=NULL&&m_Reaction[0]!=NULL) //dans le cas d'une réaction "Centrale
+    if(m_Reaction[1]!=NULL&&m_Reaction[0]!=NULL) //"middle" reaction
     {
         variation  = ( 1)*(m_Reaction[0]->returnKab()*m_Reaction[0]->getElementA()->returnCt(instant).y() - m_Reaction[1]->returnKab()*m_TCt[instant].y()); //sens direct
-        variation += (-1)*(m_Reaction[0]->returnKba()*m_TCt[instant].y() - m_Reaction[1]->returnKba()*m_Reaction[1]->getElementB()->returnCt(instant).y()); //sens indirect //les parenthèses ont été rajoutées après, il faut vérifier que c'est bon.
+        variation += (-1)*(m_Reaction[0]->returnKba()*m_TCt[instant].y() - m_Reaction[1]->returnKba()*m_Reaction[1]->getElementB()->returnCt(instant).y()); //sens indirect //les parenthses ont t rajoutes aprs, il faut vrifier que c'est bon.
     }
 
-    if(m_Reaction[1]!=NULL&&m_Reaction[0]==NULL) //Dans le cas d'une réaction uniquement "à droite"
+    if(m_Reaction[1]!=NULL&&m_Reaction[0]==NULL) //"right" reaction
     {
         variation  = (-1)*m_Reaction[1]->returnKab()*m_TCt[instant].y();
         variation += ( 1)*m_Reaction[1]->returnKba()*m_Reaction[1]->getElementB()->returnCt(instant).y();
     }
 
-    if(m_Reaction[0]!=NULL&&m_Reaction[1]==NULL) //Dans le cas d'une réaction uniquement "à gauche"
+    if(m_Reaction[0]!=NULL&&m_Reaction[1]==NULL) //"left" reaction
     {
         variation  = ( 1)*m_Reaction[0]->returnKab()*m_Reaction[0]->getElementA()->returnCt(instant).y();
         variation += (-1)*m_Reaction[0]->returnKba()*m_TCt[instant].y();
@@ -300,20 +293,19 @@ void T_Element::avancer(T_Times* T, int instant)
 
 
     m_Ct+=variation * (T->deltaTsec());
-    m_TCt.push_back(QPointF(T->courantsec()+T->deltaTsec(),m_Ct)); //le +dT est là pour essayer de résoudre le bug du premier point
+    m_TCt.push_back(QPointF(T->actualsec()+T->deltaTsec(),m_Ct)); //+dT to solve a bug for the first point
     m_sizeTCt++;
-//    std::cout<<endl<<"fin de T_Element::avancer";
 }
-void T_Element::preparer() // sert à remettre le tableau à l'instant 0
+void T_Element::prepare() // reset to time=0
 {
     std::vector<QPointF> temp;
-    m_TCt.swap(temp);           //car m_TCt.shrink_to_fit() fait partie du standard C++11
+    m_TCt.swap(temp);           //because m_TCt.shrink_to_fit() is C++11 only
 
     m_TCt.push_back(QPointF(0,m_C0));
     m_sizeTCt = 1;
     m_Ct=m_C0;
 }
-void T_Element::reserver(int nombre)
+void T_Element::reserve(int nombre)
 {
     m_TCt.reserve(nombre);
 }
@@ -325,22 +317,20 @@ double T_Element::getC0()
 {
     return m_C0;
 }
-int T_Element::verifier()
+int T_Element::check()
 {
-    if (/*m_Name[0]!='\0'           &&      //Je m'en suis rendu compte : on ne règle pas le nom
-   */   m_C0>=0                    &&        //la concentration initiale peut parfaitement etre nulle...
-        //m_Ct!=0                &&
+    if (m_C0>=0                    &&
         ((m_Reaction[0]!=NULL)||(m_Reaction[1]!=NULL))   &&
         m_TCt[0].y()>=0               &&
         m_sizeTCt!=0)
         return 0;
     return 1;
 }
-T_Element::~T_Element()//destructeur pour T_Element (inutilisé dans notre cas)
+T_Element::~T_Element()
 {
 }
 
-//Méthodes pour T_Reaction
+//T_Reaction Methodes
 
 T_Reaction::T_Reaction()
 {
@@ -349,42 +339,42 @@ T_Reaction::T_Reaction()
     m_Kab = 0;
     m_Kba = 0;
 }
-T_Reaction::T_Reaction(T_Element *A, T_Element *B)//constructeur surchargé 1, utilité à définir
+T_Reaction::T_Reaction(T_Element *A, T_Element *B)
 {
         m_A = A;
         m_B = B;
 
-        m_A->associerReaction(this, 1);
-        m_B->associerReaction(this, -1);
+        m_A->associateReaction(this, 1);
+        m_B->associateReaction(this, -1);
 }
-void T_Reaction::initialiser(T_Element *A, T_Element *B)
+void T_Reaction::initialize(T_Element *A, T_Element *B)
 {
         m_A = A;
         m_B = B;
 
-        //il faudra bien sûr reparamétrer K dès que celui ci change...
+        //don't forget to set K as soon as it changes...
 
-        m_A->associerReaction(this, 1);
-        m_B->associerReaction(this, -1);
+        m_A->associateReaction(this,  1);
+        m_B->associateReaction(this, -1);
 }
-void T_Reaction::dissocier(T_Element *A, T_Element *B)
+void T_Reaction::dissociate(T_Element *A, T_Element *B)
 {
         m_A = NULL;
         m_B = NULL;
 
-        //il faudra bien sûr reparamétrer K dès que celui ci change...
+        //the same...
 
-        A->dissocierReaction(/*this,*/ 1);
-        B->dissocierReaction(/*this,*/ -1);
+        A->dissociateReaction( 1);
+        B->dissociateReaction(-1);
 }
-T_Reaction::T_Reaction(T_Element *A, T_Element *B, double K1, double K2)//constructeur surchargé 2, qui prend K en paramètre
+T_Reaction::T_Reaction(T_Element *A, T_Element *B, double K1, double K2)
 {
     m_A = A;
     m_B = B;
     m_Kab = K1;
     m_Kba = K2;
-    m_A->associerReaction(this, 1); //la réaction intervient chez les deux éléments
-    m_B->associerReaction(this, -1);
+    m_A->associateReaction(this, 1); //the reaction operates on the two elements
+    m_B->associateReaction(this, -1);
 }
 T_Element* T_Reaction::getElementA()
 {
@@ -400,7 +390,7 @@ double T_Reaction::returnKab(){
 double T_Reaction::returnKba(){
     return m_Kba;
 }
-int T_Reaction::verifier()
+int T_Reaction::check()
 {
     if(m_A!=NULL && m_B!=NULL && ( m_Kab!=0 ||m_Kba!=0))
         return 0;
@@ -414,59 +404,59 @@ void T_Reaction::setKba(double Kba)
 {
     m_Kba=Kba;
 }
-T_Reaction::~T_Reaction() //destructeur pour T_Reaction (inutilisé dans notre cas)
+T_Reaction::~T_Reaction()
 {
 }
 
-//Méthodes pour T_Times
+//T_Times Methodes
 
-T_Times::T_Times():m_Duree(0), m_DeltaT(0), m_Courant(0){}
+T_Times::T_Times():m_Duration(0), m_DeltaT(0), m_Actual(0){}
 double T_Times::dureesec()
 {
-    return m_Duree;
+    return m_Duration;
 }
 double T_Times::deltaTsec()
 {
     return m_DeltaT;
 }
-double T_Times::courantsec()
+double T_Times::actualsec()
 {
-    return m_Courant;
+    return m_Actual;
 }
-void T_Times::avancement()
+void T_Times::step()
 {
-    m_Courant += m_DeltaT;
+    m_Actual += m_DeltaT;
 }
 bool T_Times::checkLoop()
 {
-    if (m_Courant >/*=*/ m_Duree) //petite modification ici pour tester. temporaire?
+    if (m_Actual > m_Duration)
         return false;
     return true;
 }
-void T_Times::initTemps()
+void T_Times::initTime()
 {
-    m_Duree = 0; //il faudra bien s^ur tester si ces paramètres ont été changés avant de lancer la réaction...
-    m_DeltaT = 0; //idem : sinon division par 0... C'est mal!
-    m_Courant = 0;
+    m_Duration = 0; //of course, check that these parameters have changed before launching the simulation...
+    m_DeltaT = 0; //idem : otherwise we divide by 0... It's bad!
+    m_Actual = 0;
 }
-int T_Times::verifier()
+int T_Times::check()
 {
-    if(m_Duree>0&&m_DeltaT>0&&m_Courant>=0&&m_Duree>=m_DeltaT)
+    if(m_Duration>0&&m_DeltaT>0&&m_Actual>=0&&m_Duration>=m_DeltaT)
         return 0;
     return 1;
 }
-void T_Times::setDuree(double Duree)
+void T_Times::setDuree(double Duration)
 {
-    m_Duree=Duree;
+    m_Duration=Duration;
 }
 void T_Times::setDeltaT(double DeltaT)
 {
     m_DeltaT=DeltaT;
 }
-void T_Times::initialiser()
+void T_Times::initialize()
 {
-    m_Courant=0;
+    m_Actual=0;
 }
-T_Times::~T_Times() //destructeur pour T_Times (inutilisé dans notre cas)
+T_Times::~T_Times()
 {
 }

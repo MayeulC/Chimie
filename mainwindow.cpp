@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "fenapropos.h"
+#include "aboutwindow.h"
 #include "ui_mainwindow.h"
 
 
@@ -8,97 +8,95 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    Temps.initTemps();
-    ui->verticalLayout_2->addWidget(&graphe);
-    //graphe.setParent(ui->groupBoxGraphique);
-    graphe.setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    Time.initTime();
+    ui->verticalLayout_2->addWidget(&m_graph);
+    m_graph.setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
-    //graphe.IamYourGrandFather(this);
     Xmax=0;
     Ymax=0;
-    simulation[0].creerMessageErreur(this); //juste pour pouvoir empêcher l'utilisateur de cliquer sur la fenêtre
-    simulation[1].creerMessageErreur(this); //lorqu'une boite de dialogue est ouverte.
+    simulation[0].createErrorMessage(this); //So that the window can't be bring foreground
+    simulation[1].createErrorMessage(this); //while a dialog box is opened
 
     element[0]=simulation[0].getElements();
     element[1]=simulation[1].getElements();
-   graphe.setElements(element);
-   graphe.setEchelle(&Xmax,&Ymax);
+   m_graph.setElements(element);
+   m_graph.setScale(&Xmax,&Ymax);
 
-    //on met les couleurs par défaut des boutons :
+    //default colors on the buttons :
    for(int j=0;j<2;j++)
    {
        for(int i=0; i<4;i++)
         {
-            QColor col=graphe.getCouleur(i,j);
+            QColor col=m_graph.getColor(i,j);
             QString qss = QString("background-color: %1").arg(col.name());
-            if(i==0&&j==0) //on aurait pu le faire avec le préprocesseur aussi...
-                ui->Couleur0->setStyleSheet(qss);
+            if(i==0&&j==0) //A macro should work, too...
+                ui->Color0->setStyleSheet(qss);
             if(i==1&&j==0)
-                ui->Couleur1->setStyleSheet(qss);
+                ui->Color1->setStyleSheet(qss);
             if(i==2&&j==0)
-                ui->Couleur2->setStyleSheet(qss);
+                ui->Color2->setStyleSheet(qss);
             if(i==3&&j==0)
-                ui->Couleur3->setStyleSheet(qss);
-            //passage à la simulation #2
+                ui->Color3->setStyleSheet(qss);
+            //simulation #2
             if(i==0&&j==1)
-                ui->Couleur0_2->setStyleSheet(qss);
+                ui->Color0_2->setStyleSheet(qss);
             if(i==1&&j==1)
-                ui->Couleur1_2->setStyleSheet(qss);
+                ui->Color1_2->setStyleSheet(qss);
             if(i==2&&j==1)
-                ui->Couleur2_2->setStyleSheet(qss);
+                ui->Color2_2->setStyleSheet(qss);
             if(i==3&&j==1)
-                ui->Couleur3_2->setStyleSheet(qss);
+                ui->Color3_2->setStyleSheet(qss);
         }
    }
 
-    simulation[0].setTemps(&Temps); //on va en profiter pour mettre le parent du QErrorMessage à jour
-    simulation[1].setTemps(&Temps);
+    simulation[0].setTemps(&Time); //Doing this, we update QErrorMessage's parent, too.
+    simulation[1].setTemps(&Time);
 
-    tempsReel=false;
-    m_messageErreur=new QErrorMessage(this);
+    m_realTime=false;
+    m_errorMessage=new QErrorMessage(this);
 
 
-    connect(&simulation[0],SIGNAL(MessageStatut(QString)),this,SIGNAL(MessageStatut(QString)));
-    connect(&simulation[1],SIGNAL(MessageStatut(QString)),this,SIGNAL(MessageStatut(QString)));
-    connect(&simulation[0],SIGNAL(ProgressionCalcul(int)),this,SIGNAL(ProgressionCalcul(int)));
-    connect(&simulation[1],SIGNAL(ProgressionCalcul(int)),this,SIGNAL(ProgressionCalcul(int)));
+    connect(&simulation[0],SIGNAL(MessageStatus(QString)),this,SIGNAL(MessageStatus(QString)));
+    connect(&simulation[1],SIGNAL(MessageStatus(QString)),this,SIGNAL(MessageStatus(QString)));
+    connect(&simulation[0],SIGNAL(CalculationProgress(int)),this,SIGNAL(CalculationProgress(int)));
+    connect(&simulation[1],SIGNAL(CalculationProgress(int)),this,SIGNAL(CalculationProgress(int)));
 
-    //et maintenant, les sliders...
-    connect(&simulation[0],SIGNAL(nouveauRapport1(int)),ui->horizontalSlider,SLOT(setValue(int)));
-    connect(&simulation[1],SIGNAL(nouveauRapport1(int)),ui->horizontalSlider,SLOT(setValue(int)));
-    connect(&simulation[0],SIGNAL(nouveauRapport2(int)),ui->horizontalSlider_2,SLOT(setValue(int)));
-    connect(&simulation[1],SIGNAL(nouveauRapport2(int)),ui->horizontalSlider_2,SLOT(setValue(int)));
+    //now, the sliders...
+    connect(&simulation[0],SIGNAL(newRatio1(int)),ui->horizontalSlider,SLOT(setValue(int)));
+    connect(&simulation[1],SIGNAL(newRatio1(int)),ui->horizontalSlider,SLOT(setValue(int)));
+    connect(&simulation[0],SIGNAL(newRatio2(int)),ui->horizontalSlider_2,SLOT(setValue(int)));
+    connect(&simulation[1],SIGNAL(newRatio2(int)),ui->horizontalSlider_2,SLOT(setValue(int)));
 
     connect(&simulation[0],SIGNAL(DisableSlider1(bool)),ui->horizontalSlider,SLOT(setDisabled(bool)));
     connect(&simulation[1],SIGNAL(DisableSlider1(bool)),ui->horizontalSlider,SLOT(setDisabled(bool)));
     connect(&simulation[0],SIGNAL(DisableSlider2(bool)),ui->horizontalSlider_2,SLOT(setDisabled(bool)));
     connect(&simulation[1],SIGNAL(DisableSlider2(bool)),ui->horizontalSlider_2,SLOT(setDisabled(bool)));
 
-    connect(&simulation[0],SIGNAL(nouveauK1(double)),ui->k1DoubleSpinBox,SLOT(setValue(double)));
-    connect(&simulation[1],SIGNAL(nouveauK1(double)),ui->k1DoubleSpinBox_2,SLOT(setValue(double)));
-    connect(&simulation[0],SIGNAL(nouveauK3(double)),ui->k3DoubleSpinBox,SLOT(setValue(double)));
-    connect(&simulation[1],SIGNAL(nouveauK3(double)),ui->k3DoubleSpinBox_2,SLOT(setValue(double)));
+    connect(&simulation[0],SIGNAL(newK1(double)),ui->k1DoubleSpinBox,SLOT(setValue(double)));
+    connect(&simulation[1],SIGNAL(newK1(double)),ui->k1DoubleSpinBox_2,SLOT(setValue(double)));
+    connect(&simulation[0],SIGNAL(newK3(double)),ui->k3DoubleSpinBox,SLOT(setValue(double)));
+    connect(&simulation[1],SIGNAL(newK3(double)),ui->k3DoubleSpinBox_2,SLOT(setValue(double)));
 
-    emit MessageStatut("Prêt.");
+    emit MessageStatus(tr("PrÃªt."));
 }
 
-void MainWindow::connexionSliders() //m^eme chose que pour la déco : l'onglet actif suffit
+void MainWindow::connectSliders() //current tab is sufficient
 {
     connect(ui->horizontalSlider,SIGNAL(valueChanged(int)),this,SLOT(on_horizontalSlider_valueChanged(int)));
     connect(ui->horizontalSlider_2,SIGNAL(valueChanged(int)),this,SLOT(on_horizontalSlider_2_valueChanged(int)));
 }
-void MainWindow::deconnexionSliders() //il suffit de déconnecter la simulation actuelle
+void MainWindow::disconnectSliders() //current simulation is sufficient too
 {
     disconnect(ui->horizontalSlider,SIGNAL(valueChanged(int)),this,SLOT(on_horizontalSlider_valueChanged(int)));
     disconnect(ui->horizontalSlider_2,SIGNAL(valueChanged(int)),this,SLOT(on_horizontalSlider_2_valueChanged(int)));
 }
-QString MainWindow::changerCouleur(int courbe, int sim)
+QString MainWindow::changeColor(int curve, int sim)
 {
     QRgb col;
-    col= QColorDialog::getRgba(graphe.getCouleur(courbe,sim));
-    graphe.setCouleur(courbe,sim,col);
+    col= QColorDialog::getRgba(m_graph.getColor(curve,sim));
+    m_graph.setColor(curve,sim,col);
     QColor col2=col;
-    graphe.update();
+    m_graph.update();
     return QString("background-color: %1").arg(col2.name());
 }
 MainWindow::~MainWindow()
@@ -110,64 +108,53 @@ MainWindow::~MainWindow()
 
 
 /*******************************\
-|Dessous viennent les connexions|
-| signal-slot semi-automatisées |
-|           de Qt               |
+|  Under are Qt semi-automated  |
+|    signal-slot connections    |
 \*******************************/
 
 
-void MainWindow::on_Boutton_Calculer_clicked()
+void MainWindow::on_Button_Launch_clicked()
 {
-    //vérifier si il s'agit de l'onglet 0 ou 1
-    int Courant=ui->tabWidget->currentIndex();
-    Xmax=simulation[!(Courant)].getXmax();
-    Ymax=simulation[!(Courant)].getYmax();
-    simulation[Courant].go();
-    soumissionYmax(simulation[Courant].getYmax());
-    soumissionXmax(simulation[Courant].getXmax());
-    graphe.effacer();
-    graphe.update();
+    //check if it's tab 0 or 1
+    int Current=ui->tabWidget->currentIndex();
+    Xmax=simulation[!(Current)].getXmax();
+    Ymax=simulation[!(Current)].getYmax();
+    simulation[Current].go();
+    submissionYmax(simulation[Current].getYmax());
+    submissionXmax(simulation[Current].getXmax());
+    m_graph.clean();
+    m_graph.update();
 }
-void MainWindow::on_Boutton_Effacer_clicked()
+void MainWindow::on_Button_Erase_clicked()
 {
-    //redessiner();
-    //mettre des conditions sur la visibilité des onglets
-    /*if(ui->tabWidget->currentIndex()==0)
-    {
-        simulation[0].amnesie();
-        Xmax=simulation[1].getXmax();
-        Ymax=simulation[1].getYmax();
-    }*/
-
-    simulation[ui->tabWidget->currentIndex()].amnesie();
+    simulation[ui->tabWidget->currentIndex()].amnesia();
     Xmax=simulation[!ui->tabWidget->currentIndex()].getXmax();
     Ymax=simulation[!ui->tabWidget->currentIndex()].getYmax();
-    graphe.effacer();
-    graphe.update();
+    m_graph.clean();
+    m_graph.update();
 }
 
 
-//Menu Fichier :
-void MainWindow::on_actionQuitter_triggered()
+//File Menu :
+void MainWindow::on_actionQuit_triggered()
 {
     exit(EXIT_SUCCESS);
 }
-void MainWindow::on_actionImprimer_triggered()
+void MainWindow::on_actionPrint_triggered()
 {
-    graphe.imprimer();
+    m_graph.print();
 }
-//Menu Edition :
-void MainWindow::on_actionCopier_Graphique_triggered()
+//Edit Menu :
+void MainWindow::on_actionCopy_Graph_triggered()
 {
-    QApplication::clipboard()->setImage(graphe.getImage());
+    QApplication::clipboard()->setImage(m_graph.getImage());
 }
-void MainWindow::on_action_Importer_triggered() //l'opérateur '=' ne fonctionne pas ici.
+void MainWindow::on_action_Import_triggered()
 {
-    int Courant=ui->tabWidget->currentIndex();
+    int Current=ui->tabWidget->currentIndex(); //TODO : operator = overload
 
-    //on prend le taureau par les cornes et on se jette à l'eau :
-    deconnexionSliders();
-    if(Courant)//si onglet 1
+    disconnectSliders();
+    if(Current)//if tab 1
     {
         ui->CaDoubleSpinBox_2->setValue(ui->CaDoubleSpinBox->value());
         ui->CbDoubleSpinBox_2->setValue(ui->CbDoubleSpinBox->value());
@@ -177,9 +164,9 @@ void MainWindow::on_action_Importer_triggered() //l'opérateur '=' ne fonctionne 
         ui->k1DoubleSpinBox_2->setValue(ui->k1DoubleSpinBox->value());
         ui->k2DoubleSpinBox_2->setValue(ui->k2DoubleSpinBox->value());
         ui->k3DoubleSpinBox_2->setValue(ui->k3DoubleSpinBox->value());
-        ui->kmoins1DoubleSpinBox_2->setValue(ui->kmoins1DoubleSpinBox->value());
-        ui->kmoins2DoubleSpinBox_2->setValue(ui->kmoins2DoubleSpinBox->value());
-        ui->kmoins3DoubleSpinBox_2->setValue(ui->kmoins3DoubleSpinBox->value());
+        ui->kminus1DoubleSpinBox_2->setValue(ui->kminus1DoubleSpinBox->value());
+        ui->kminus2DoubleSpinBox_2->setValue(ui->kminus2DoubleSpinBox->value());
+        ui->kminus3DoubleSpinBox_2->setValue(ui->kminus3DoubleSpinBox->value());
     }
     else
     {
@@ -191,143 +178,151 @@ void MainWindow::on_action_Importer_triggered() //l'opérateur '=' ne fonctionne 
         ui->k1DoubleSpinBox->setValue(ui->k1DoubleSpinBox_2->value());
         ui->k2DoubleSpinBox->setValue(ui->k2DoubleSpinBox_2->value());
         ui->k3DoubleSpinBox->setValue(ui->k3DoubleSpinBox_2->value());
-        ui->kmoins1DoubleSpinBox->setValue(ui->kmoins1DoubleSpinBox_2->value());
-        ui->kmoins2DoubleSpinBox->setValue(ui->kmoins2DoubleSpinBox_2->value());
-        ui->kmoins3DoubleSpinBox->setValue(ui->kmoins3DoubleSpinBox_2->value());
+        ui->kminus1DoubleSpinBox->setValue(ui->kminus1DoubleSpinBox_2->value());
+        ui->kminus2DoubleSpinBox->setValue(ui->kminus2DoubleSpinBox_2->value());
+        ui->kminus3DoubleSpinBox->setValue(ui->kminus3DoubleSpinBox_2->value());
     }
-    connexionSliders();
+    connectSliders();
 
 }
-//Menu Affichage :
-void MainWindow::on_action_Actualiser_Graphique_triggered()
+
+//Display Menu :
+void MainWindow::on_action_Update_Graph_triggered()
 {
-    graphe.effacer();
-    graphe.update();
+    m_graph.clean();
+    m_graph.update();
 }
 void MainWindow::on_actionOptions_triggered()
 {
-    ReglagesCourbes reglages(&graphe);
-    reglages.exec();
+    GraphSettings settings(&m_graph);
+    settings.exec();
 }
-void MainWindow::on_action_Temps_R_el_triggered(bool checked)
+void MainWindow::on_action_RealTime_triggered(bool checked)
 {
-    tempsReel=checked;
+    m_realTime=checked;
     if(checked)
     {
-        m_messageErreur->showMessage("Attention :\nFonctionnalité potentiellement instable et très gourmande en ressources");
+        m_errorMessage->showMessage(tr("Attention :\nFonctionnalitÃ© potentiellement instable et trÃ¨s gourmande en ressources"));
     }
 }
-//Menu A propos :
-void MainWindow::on_actionA_propos_triggered()
+
+//About Menu :
+void MainWindow::on_actionAbout_triggered()
 {
-    FenApropos Apropos;
-    Apropos.exec();
+    AboutWindow About;
+    About.exec();
 }
-//Sous-menu Debug :
-    void MainWindow::on_actionDebugCourbes_triggered(bool checked)
+
+//Debug Menu :
+    void MainWindow::on_actionDebugCurves_triggered(bool checked)
 {
     if(checked)
-        qDebug()<<"Debug Courbes Activé\n";
+        qDebug()<<"Debug Courbes ActivÃ©\n";
     if(!checked)
-        qDebug()<<"Debug Courbes Désactivé\n";
-    graphe.setDebug(checked);
+        qDebug()<<"Debug Courbes DsactivÃ©\n";
+    m_graph.setDebug(checked);
 }
     void MainWindow::on_actionDebugCalcul_triggered(bool checked)
     {
         if(checked)
-            qDebug()<<"Debug Calcul Activé\n";
+            qDebug()<<"Debug Calcul ActivÃ©\n";
         if(!checked)
-            qDebug()<<"Debug Calcul Désactivé\n";
+            qDebug()<<"Debug Calcul DsactivÃ©\n";
         simulation[0].setDebug(checked);
         simulation[1].setDebug(checked);
     }
 
 //Sliders :
-void MainWindow::on_horizontalSlider_valueChanged(int position)//le slider a bougé, on modifie le rapport
+void MainWindow::on_horizontalSlider_valueChanged(int position) //slider has moved, let's change the ratio
 {
-    int Courant=ui->tabWidget->currentIndex();
+    int Current=ui->tabWidget->currentIndex();
     disconnect(ui->k1DoubleSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_k1DoubleSpinBox_valueChanged(double)));
     disconnect(ui->k1DoubleSpinBox_2,SIGNAL(valueChanged(double)),this,SLOT(on_k1DoubleSpinBox_2_valueChanged(double)));
-    simulation[Courant].setRapport1(position);
+    simulation[Current].setRatio1(position);
     connect(ui->k1DoubleSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_k1DoubleSpinBox_valueChanged(double)));
     connect(ui->k1DoubleSpinBox_2,SIGNAL(valueChanged(double)),this,SLOT(on_k1DoubleSpinBox_2_valueChanged(double)));
-    if(tempsReel)
+    if(m_realTime)
     {
-        simulation[Courant].go();
-        graphe.effacer();
-        graphe.update();
+        simulation[Current].go();
+        m_graph.clean();
+        m_graph.update();
     }
 }
 void MainWindow::on_horizontalSlider_2_valueChanged(int position)
 {
-    int Courant=ui->tabWidget->currentIndex();
+    int Current=ui->tabWidget->currentIndex();
     disconnect(ui->k3DoubleSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_k3DoubleSpinBox_valueChanged(double)));
     disconnect(ui->k3DoubleSpinBox_2,SIGNAL(valueChanged(double)),this,SLOT(on_k3DoubleSpinBox_2_valueChanged(double)));
-    simulation[Courant].setRapport2(position);
+    simulation[Current].setRatio2(position);
     connect(ui->k3DoubleSpinBox,SIGNAL(valueChanged(double)),this,SLOT(on_k3DoubleSpinBox_valueChanged(double)));
     disconnect(ui->k3DoubleSpinBox_2,SIGNAL(valueChanged(double)),this,SLOT(on_k3DoubleSpinBox_2_valueChanged(double)));
-    if(tempsReel)
+    if(m_realTime)
     {
-        simulation[Courant].go();
-        graphe.effacer();
-        graphe.update();
+        simulation[Current].go();
+        m_graph.clean();
+        m_graph.update();
     }
 }
 
-//onglets :
-void MainWindow::on_tabWidget_currentChanged(int index) //permet de mettre à jour les sliders au changement d'onglet
+//tabs :
+void MainWindow::on_tabWidget_currentChanged(int index) //update sliders on tab change
 {
-    deconnexionSliders(); //sinon les approximations vont faire changer K1 et K3
-    simulation[index].CalculRapport1();
-    simulation[index].CalculRapport2();
-    simulation[index].testPourSliders();
-    connexionSliders();
+    disconnectSliders(); //if we don't do this, approximations will change K1 and K3
+    simulation[index].CalculateRatio1();
+    simulation[index].CalculateRatio2();
+    simulation[index].testForSliders();
+    connectSliders();
 }
 
-void MainWindow::on_Couleur0_clicked(){ui->Couleur0->setStyleSheet(changerCouleur(0, 0));}
-void MainWindow::on_Couleur1_clicked(){ui->Couleur1->setStyleSheet(changerCouleur(1, 0));}
-void MainWindow::on_Couleur2_clicked(){ui->Couleur2->setStyleSheet(changerCouleur(2, 0));}
-void MainWindow::on_Couleur3_clicked(){ui->Couleur3->setStyleSheet(changerCouleur(3, 0));}
+void MainWindow::on_Color0_clicked(){ui->Color0->setStyleSheet(changeColor(0, 0));}
+void MainWindow::on_Color1_clicked(){ui->Color1->setStyleSheet(changeColor(1, 0));}
+void MainWindow::on_Color2_clicked(){ui->Color2->setStyleSheet(changeColor(2, 0));}
+void MainWindow::on_Color3_clicked(){ui->Color3->setStyleSheet(changeColor(3, 0));}
 
-void MainWindow::on_Couleur0_2_clicked(){ui->Couleur0_2->setStyleSheet(changerCouleur(0, 1));}
-void MainWindow::on_Couleur1_2_clicked(){ui->Couleur1_2->setStyleSheet(changerCouleur(1, 1));}
-void MainWindow::on_Couleur2_2_clicked(){ui->Couleur2_2->setStyleSheet(changerCouleur(2, 1));}
-void MainWindow::on_Couleur3_2_clicked(){ui->Couleur3_2->setStyleSheet(changerCouleur(3, 1));}
+void MainWindow::on_Color0_2_clicked(){ui->Color0_2->setStyleSheet(changeColor(0, 1));}
+void MainWindow::on_Color1_2_clicked(){ui->Color1_2->setStyleSheet(changeColor(1, 1));}
+void MainWindow::on_Color2_2_clicked(){ui->Color2_2->setStyleSheet(changeColor(2, 1));}
+void MainWindow::on_Color3_2_clicked(){ui->Color3_2->setStyleSheet(changeColor(3, 1));}
 
 void MainWindow::on_k1DoubleSpinBox_valueChanged(double arg1)
 {
-    deconnexionSliders();
+    disconnectSliders();
     simulation[0].setKab(arg1);
-    connexionSliders();
+    connectSliders();
 }
 void MainWindow::on_k2DoubleSpinBox_valueChanged(double arg1)
 {
-    deconnexionSliders();
+    disconnectSliders();
     simulation[0].setKbc(arg1);
-    connexionSliders();
+    connectSliders();
 }
 void MainWindow::on_k3DoubleSpinBox_valueChanged(double arg1)
 {
-    deconnexionSliders();
+    disconnectSliders();
     simulation[0].setKcd(arg1);
-    connexionSliders();
+    connectSliders();
 }
 void MainWindow::on_k1DoubleSpinBox_2_valueChanged(double arg1)
 {
-    deconnexionSliders();
+    disconnectSliders();
     simulation[1].setKab(arg1);
-    connexionSliders();
+    connectSliders();
 }
 void MainWindow::on_k2DoubleSpinBox_2_valueChanged(double arg1)
 {
-    deconnexionSliders();
+    disconnectSliders();
     simulation[1].setKbc(arg1);
-    connexionSliders();
+    connectSliders();
 }
 void MainWindow::on_k3DoubleSpinBox_2_valueChanged(double arg1)
 {
-    deconnexionSliders();
+    disconnectSliders();
     simulation[1].setKcd(arg1);
-    connexionSliders();
+    connectSliders();
 }
 
+
+void MainWindow::on_actionDebugCurves_triggered()
+{
+
+}

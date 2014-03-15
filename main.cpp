@@ -1,9 +1,6 @@
 #include <QApplication>
-//#include <QtPlugin>
 
 #include "mainwindow.h"
-
-//Q_IMPORT_PLUGIN(qtaccessiblewidgets)
 
 int main(int argc, char *argv[])
 {

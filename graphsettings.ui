@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ReglagesCourbes</class>
- <widget class="QDialog" name="ReglagesCourbes">
+ <class>GraphSettings</class>
+ <widget class="QDialog" name="GraphSettings">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>283</width>
-    <height>217</height>
+    <height>229</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Options</string>
   </property>
   <property name="windowIcon">
    <iconset resource="ressources.qrc">
-    <normaloff>:/images/icone.ico</normaloff>:/images/icone.ico</iconset>
+    <normaloff>:/images/icon.ico</normaloff>:/images/icon.ico</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
