@@ -20,27 +20,27 @@ void T_Simulation::go()
 {
     //check prerequesites, and display an error message if needed
     // (test k!=0; t !=0; dt != 0 )
-    std::string ErrorMessage;
+    QString ErrorMessage;
 
     if ((element[0].check()||element[1].check()||element[2].check()||((elementsNumber-3)&&element[3].check())))
     {
-        ErrorMessage+="<br> - Les éléments de la réaction";
+        ErrorMessage += tr("<br> - Les éléments de la réaction");
     }
 
     if(RAB.check()||RBC.check()||((elementsNumber-3)&&RCD.check()))
     {
-        ErrorMessage+="<br> - Les paramètres de raction";
+        ErrorMessage += tr("<br> - Les paramètres de raction");
     }
 
     if(m_Time->check())
     {
-        ErrorMessage+="<br> - Les paramètres temporels";
+        ErrorMessage += tr("<br> - Les paramètres temporels");
     }
     if(ErrorMessage.size()!=0)
     {
-        emit MessageStatus("Une erreur est survenue! Vérifiez les paramètres.");
-        ErrorMessage="Veuillez vérifier : " + ErrorMessage;
-        m_errorMessage->showMessage(ErrorMessage.c_str());
+        emit MessageStatus(tr("Une erreur est survenue! Vérifiez les paramètres."));
+        ErrorMessage= tr("Veuillez vérifier : ") + ErrorMessage;
+        m_errorMessage->showMessage(ErrorMessage);
         return;
     }
     element[0].prepare();
@@ -203,7 +203,7 @@ void T_Simulation::outOfMemHandler()
     element[1].prepare();
     element[2].prepare();
     element[3].prepare();
-    emit MessageStatus(tr("Erreur critique : Mmoire insuffisante!"));
+    emit MessageStatus(tr("Erreur critique : Mémoire insuffisante!"));
     QMessageBox::warning(m_parent,tr("Erreur"),tr("Mémoire vive insuffisante pour continuer.\nVérifiez les paramètres temporels."));
     std::set_new_handler(NULL);
 }
@@ -227,7 +227,7 @@ T_Element::T_Element()
      m_TCt.push_back(QPointF(0,m_C0));
      m_sizeTCt = 1;
 }
-void T_Element::associateReaction(T_Reaction *R, int Direction){ //associate a reaction   un élément. Si l'élément est réactif, la réaction sera ajoutée en 0. Si l'élément est produit, la réaction sera ajoutée en 1
+void T_Element::associateReaction(T_Reaction *R, int Direction){ //associate a reaction to an element. If the element is consumed, the reaction will be added at 0. If consumed, at 1.
 
     if (Direction == 1) //the element is consumed, so the reaction is on the right (A = B)
     {
@@ -254,7 +254,7 @@ void T_Element::dissociateReaction(int Direction)//delete the element from the r
     }
     if ((Direction != 1) && (Direction != -1)) //ERROR
     {
-        qDebug()<<"paramtre sens invalide dans la fonction dissocierReaction."<<endl;
+        qDebug()<<"paramètre sens invalide dans la fonction dissocierReaction."<<endl;
     }
 }
 QPointF T_Element::returnCt(int i)

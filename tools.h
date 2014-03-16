@@ -8,10 +8,7 @@
 #include <SDL/SDL.h>
 #undef main
 
-/* PIEGE: main est redéfini par SDL.h comme SDL_Main.
-		  On retire donc la définition puisque Qt le gère
-*/
-
+/* IT'S A TRAP! main is redefined by SDL.h as SDL_Main. So we undefine it here */
  
  namespace SDLHelpers
  {
@@ -37,28 +34,28 @@
         friend class Singleton<SDLContext>;
 			
 	public:
-		// Permet d'accéder en lecture seulement à la surface principale et sa configuration
+		//allows us to access read-only to the main surface and its configuration
 		const SDL_Surface* const getScreen() const;
 		
 	private:
-		// Initialise un contexte SDL. Dans le cas d'un échec,
-		// l'application est terminée, avec la raison dans la sortie d'erreur
+		// Initialize a SDL context. If it fails, app is terminated, with an error in the output
 		SDLContext();
 	
-		// Libère le contexte SDL
+		// Free the SDL context
 		~SDLContext();
 	
 	private:
 		SDL_Surface *screen;
 	};
 	
-	// Création d'une surface SDL rapidement convertible en QImage
+	// Creating a SDL surface that can be rapidly converted to a QImage
 	SDL_Surface* createQImageCompliantSurface(Uint32 flags, int width, int height);
 	
-	/* Fonctions de conversion entre SDL_Surface et QImage
-	    SDLSurfaceToQImage **DOIT** recevoir une surface
-	    construite avec createQImageCompliantSurface
-	*/
+	/* Convert functions between SDL_Surface and QImage.
+	 * SDLSurfaceToQImage **MUST** receive a surface 
+	 * constructed using createQImageCompliantSurface 
+	 */
+	
 	QImage SDLSurfaceToQImage(SDL_Surface *s);
  }
  

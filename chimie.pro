@@ -3,9 +3,10 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = 
-DEPENDPATH += . release
+TARGET = chimie
 INCLUDEPATH += .
+QT += widgets
+QT += printsupport
 
 # Input
 HEADERS +=  classes.h \
@@ -27,6 +28,8 @@ SOURCES +=  classes.cpp \
             graphsettings.cpp \
     view.cpp \
     aboutwindow.cpp
+    
+TRANSLATIONS = chimie_en.ts chimie_es.ts
 
 RESOURCES += ressources.qrc
 
